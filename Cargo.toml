@@ -1,0 +1,13 @@
+[package]
+name = "xgboost"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+description = """
+Bindings to xgboost.
+"""
+categories = ["api-bindings"]
+edition = "2021"
+
+[dependencies]
+libc = "0.2"
+xgboost-sys = { path = "xgboost-sys", version = "0.1.0" }
