@@ -1,0 +1,20 @@
+
+[package]
+name = "xgboost-sys"
+version = "0.1.0"
+links = "xgboost"
+build = "build.rs"
+license = "MIT OR Apache-2.0"
+description = "Native bindings to the xgboost library"
+
+edition = "2021"
+
+[lib]
+name = "xgboost_sys"
+path = "lib.rs"
+
+[dependencies]
+libc = "0.2.135"
+
+[build-dependencies]
+cc = { version = "1.0.73", features = ['parallel'] }
