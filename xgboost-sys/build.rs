@@ -6,6 +6,8 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 fn main() {
+    let target = env::var("TARGET").unwrap();
+
     // CMake
     let _ = Config::new("xgboost")
         .uses_cxx11()
@@ -38,10 +40,15 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings.");
 
-    // LINK STUFF (LINUX)
     println!("cargo:rustc-link-search={}", out_path.join("lib").display());
     println!("cargo:rustc-link-lib=xgboost");
     println!("cargo:rustc-link-lib=dmlc");
-    println!("cargo:rustc-link-lib=stdc++");
-    println!("cargo:rustc-link-lib=gomp");
+
+    if target.contains("apple") {
+        println!("cargo:rustc-link-lib=dylib=c++");
+        println!("cargo:rustc-link-lib=dylib=omp");
+    } else {
+        println!("cargo:rustc-link-lib=dylib=stdc++");
+        println!("cargo:rustc-link-lib=dylib=gomp");
+    }
 }
