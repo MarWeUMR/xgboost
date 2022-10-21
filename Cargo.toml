@@ -1,10 +1,14 @@
 [package]
 name = "xgboost"
 version = "0.1.0"
-license = "MIT OR Apache-2.0"
+license = "MIT"
+authors = ["Marcus Weber <marcus.wallau@gmail.com>"]
+repository = "https://github.com/marweumr/xgboost-rs"
 description = """
 Bindings to xgboost.
 """
+readme = "README.md"
+
 categories = ["api-bindings"]
 edition = "2021"
 
