@@ -18,7 +18,7 @@ static KEY_BASE_MARGIN: &str = "base_margin";
 /// instance (as an `f32` value).
 #[derive(Debug)]
 pub struct DMatrix {
-    pub(super) handle: xgboost_sys::DMatrixHandle,
+    pub(super) handle: xgboost_rs_sys::DMatrixHandle,
     num_rows: usize,
     num_cols: usize,
 }
@@ -28,15 +28,15 @@ unsafe impl Sync for DMatrix {}
 
 impl DMatrix {
     /// Construct a new instance from a `DMatrixHandle` created by the `XGBoost` C API.
-    fn new(handle: xgboost_sys::DMatrixHandle) -> XGBResult<Self> {
+    fn new(handle: xgboost_rs_sys::DMatrixHandle) -> XGBResult<Self> {
         // number of rows/cols are frequently read throughout applications, so more convenient to pull them out once
         // when the matrix is created, instead of having to check errors each time XGDMatrixNum* is called
         let mut out = 0;
-        xgb_call!(xgboost_sys::XGDMatrixNumRow(handle, &mut out))?;
+        xgb_call!(xgboost_rs_sys::XGDMatrixNumRow(handle, &mut out))?;
         let num_rows = out as usize;
 
         let mut out = 0;
-        xgb_call!(xgboost_sys::XGDMatrixNumCol(handle, &mut out))?;
+        xgb_call!(xgboost_rs_sys::XGDMatrixNumCol(handle, &mut out))?;
         let num_cols = out as usize;
         info!("Loaded DMatrix with shape: {}x{}", num_rows, num_cols);
         Ok(DMatrix {
@@ -88,7 +88,7 @@ impl DMatrix {
         let array_config_cstr = ffi::CString::new(array_config).unwrap();
         let json_config_cstr = ffi::CString::new(json_config).unwrap();
 
-        xgb_call!(xgboost_sys::XGDMatrixCreateFromDense(
+        xgb_call!(xgboost_rs_sys::XGDMatrixCreateFromDense(
             array_config_cstr.as_ptr(),
             json_config_cstr.as_ptr(),
             &mut handle
@@ -104,10 +104,10 @@ impl DMatrix {
 
     pub fn from_dense(data: &[f32], num_rows: usize) -> XGBResult<Self> {
         let mut handle = ptr::null_mut();
-        xgb_call!(xgboost_sys::XGDMatrixCreateFromMat(
+        xgb_call!(xgboost_rs_sys::XGDMatrixCreateFromMat(
             data.as_ptr(),
-            num_rows as xgboost_sys::bst_ulong,
-            (data.len() / num_rows) as xgboost_sys::bst_ulong,
+            num_rows as xgboost_rs_sys::bst_ulong,
+            (data.len() / num_rows) as xgboost_rs_sys::bst_ulong,
             0.0, // TODO: can values be missing here?
             &mut handle
         ))?;
@@ -137,7 +137,7 @@ impl DMatrix {
         let indptr: Vec<u64> = indptr.iter().map(|x| *x as u64).collect();
         let indices: Vec<u32> = indices.iter().map(|x| *x as u32).collect();
         let num_cols = num_cols.unwrap_or(0); // infer from data if 0
-        xgb_call!(xgboost_sys::XGDMatrixCreateFromCSREx(
+        xgb_call!(xgboost_rs_sys::XGDMatrixCreateFromCSREx(
             indptr.as_ptr(),
             indices.as_ptr(),
             data.as_ptr(),
@@ -172,7 +172,7 @@ impl DMatrix {
         let indptr: Vec<u64> = indptr.iter().map(|x| *x as u64).collect();
         let indices: Vec<u32> = indices.iter().map(|x| *x as u32).collect();
         let num_rows = num_rows.unwrap_or(0); // infer from data if 0
-        xgb_call!(xgboost_sys::XGDMatrixCreateFromCSCEx(
+        xgb_call!(xgboost_rs_sys::XGDMatrixCreateFromCSCEx(
             indptr.as_ptr(),
             indices.as_ptr(),
             data.as_ptr(),
@@ -217,7 +217,7 @@ impl DMatrix {
         let mut handle = ptr::null_mut();
         let path_cstr = ffi::CString::new(path_as_bytes).unwrap();
         let silent = true;
-        xgb_call!(xgboost_sys::XGDMatrixCreateFromFile(
+        xgb_call!(xgboost_rs_sys::XGDMatrixCreateFromFile(
             path_cstr.as_ptr(),
             i32::from(silent),
             &mut handle
@@ -233,7 +233,7 @@ impl DMatrix {
     pub fn save<P: AsRef<Path>>(&self, path: P) -> XGBResult<()> {
         let fname = ffi::CString::new(path.as_ref().as_os_str().as_bytes()).unwrap();
         let silent = true;
-        xgb_call!(xgboost_sys::XGDMatrixSaveBinary(
+        xgb_call!(xgboost_rs_sys::XGDMatrixSaveBinary(
             self.handle,
             fname.as_ptr(),
             i32::from(silent)
@@ -263,10 +263,10 @@ impl DMatrix {
     pub fn slice(&self, indices: &[usize]) -> XGBResult<DMatrix> {
         let mut out_handle = ptr::null_mut();
         let indices: Vec<i32> = indices.iter().map(|x| *x as i32).collect();
-        xgb_call!(xgboost_sys::XGDMatrixSliceDMatrix(
+        xgb_call!(xgboost_rs_sys::XGDMatrixSliceDMatrix(
             self.handle,
             indices.as_ptr(),
-            indices.len() as xgboost_sys::bst_ulong,
+            indices.len() as xgboost_rs_sys::bst_ulong,
             &mut out_handle
         ))?;
         Ok(DMatrix::new(out_handle).unwrap())
@@ -310,7 +310,7 @@ impl DMatrix {
     ///
     /// See the `XGBoost` documentation for more information.
     pub fn set_group(&mut self, group: &[u32]) -> XGBResult<()> {
-        // same as xgb_call!(xgboost_sys::XGDMatrixSetGroup(self.handle, group.as_ptr(), group.len() as u64))
+        // same as xgb_call!(xgboost_rs_sys::XGDMatrixSetGroup(self.handle, group.as_ptr(), group.len() as u64))
         self.set_uint_info(KEY_GROUP, group)
     }
 
@@ -327,7 +327,7 @@ impl DMatrix {
         let field = ffi::CString::new(field).unwrap();
         let mut out_len = 0;
         let mut out_dptr = ptr::null();
-        xgb_call!(xgboost_sys::XGDMatrixGetFloatInfo(
+        xgb_call!(xgboost_rs_sys::XGDMatrixGetFloatInfo(
             self.handle,
             field.as_ptr(),
             &mut out_len,
@@ -339,7 +339,7 @@ impl DMatrix {
 
     fn set_float_info(&mut self, field: &str, array: &[f32]) -> XGBResult<()> {
         let field = ffi::CString::new(field).unwrap();
-        xgb_call!(xgboost_sys::XGDMatrixSetFloatInfo(
+        xgb_call!(xgboost_rs_sys::XGDMatrixSetFloatInfo(
             self.handle,
             field.as_ptr(),
             array.as_ptr(),
@@ -351,7 +351,7 @@ impl DMatrix {
         let field = ffi::CString::new(field).unwrap();
         let mut out_len = 0;
         let mut out_dptr = ptr::null();
-        xgb_call!(xgboost_sys::XGDMatrixGetUIntInfo(
+        xgb_call!(xgboost_rs_sys::XGDMatrixGetUIntInfo(
             self.handle,
             field.as_ptr(),
             &mut out_len,
@@ -362,7 +362,7 @@ impl DMatrix {
 
     fn set_uint_info(&mut self, field: &str, array: &[u32]) -> XGBResult<()> {
         let field = ffi::CString::new(field).unwrap();
-        xgb_call!(xgboost_sys::XGDMatrixSetUIntInfo(
+        xgb_call!(xgboost_rs_sys::XGDMatrixSetUIntInfo(
             self.handle,
             field.as_ptr(),
             array.as_ptr(),
@@ -373,7 +373,7 @@ impl DMatrix {
 
 impl Drop for DMatrix {
     fn drop(&mut self) {
-        xgb_call!(xgboost_sys::XGDMatrixFree(self.handle)).unwrap();
+        xgb_call!(xgboost_rs_sys::XGDMatrixFree(self.handle)).unwrap();
     }
 }
 

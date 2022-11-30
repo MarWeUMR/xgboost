@@ -3,7 +3,7 @@ extern crate indexmap;
 extern crate libc;
 extern crate log;
 extern crate tempfile;
-extern crate xgboost_sys;
+extern crate xgboost_rs_sys;
 
 macro_rules! xgb_call {
     ($x:expr) => {
