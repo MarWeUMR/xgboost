@@ -99,7 +99,7 @@ impl ToString for Objective {
 
 impl Default for Objective {
     fn default() -> Self {
-        Objective::RegLinear
+        Objective::RegSquaredError
     }
 }
 
