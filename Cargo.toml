@@ -14,7 +14,7 @@ edition = "2021"
 
 [dependencies]
 libc = "0.2"
-xgboost-rs-sys = "0.1.1"
+xgboost-rs-sys = "0.1.2"
 derive_builder = "0.11"
 indexmap = "1.9.1"
 tempfile = "3.1"
